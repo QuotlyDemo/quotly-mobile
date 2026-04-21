@@ -35,6 +35,33 @@ const PRESETS = [
   },
 ];
 
+// Compress image to under 1MB before upload
+function compressImage(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const img = document.createElement("img");
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const maxDim = 1200;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round((height / width) * maxDim); width = maxDim; }
+        else { width = Math.round((width / height) * maxDim); height = maxDim; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(
+        (blob) => resolve(new File([blob!], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" })),
+        "image/jpeg",
+        0.85
+      );
+    };
+    img.src = url;
+  });
+}
+
 export default function CustomerPage() {
   const [location, setLocation] = useState("canada");
   const [brand, setBrand] = useState("");
@@ -52,6 +79,7 @@ export default function CustomerPage() {
   const [mainImageUrl, setMainImageUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingPreset, setIsUploadingPreset] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +89,7 @@ export default function CustomerPage() {
     setPlaceOfPurchase(p.placeOfPurchase); setRetailPrice(p.retailPrice); setSize(p.size);
     setColours(p.colours); setMaterials(p.materials); setHardware(p.hardware);
     setCondition(p.condition); setInclusions(p.inclusions); setLendQuote(p.lendQuote);
-    setMainImageUrl(p.mainImageUrl); setErrors({});
+    setMainImageUrl(null); setErrors({});
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     setIsUploadingPreset(true);
@@ -75,7 +103,7 @@ export default function CustomerPage() {
       const json = await uploadRes.json();
       if (json.url) setMainImageUrl(json.url);
     } catch {
-      // preview stays as local path, upload failed silently
+      // preset upload failed silently
     } finally {
       setIsUploadingPreset(false);
     }
@@ -359,18 +387,30 @@ export default function CustomerPage() {
                     e.target.value = "";
                     return;
                   }
-                  setMainImageUrl(URL.createObjectURL(file));
+                  setMainImageUrl(null);
+                  setIsImageUploading(true);
                   clearError("mainImage");
-                  const fd = new FormData();
-                  fd.append("file", file);
-                  const res = await fetch("/api/upload-image", { method: "POST", body: fd });
-                  const json = await res.json();
-                  if (json.url) setMainImageUrl(json.url);
-                  else setError("mainImage", "Image upload failed");
+                  try {
+                    // Compress if over 1MB to stay under ALB request limits
+                    const fileToUpload = file.size > 1 * 1024 * 1024 ? await compressImage(file) : file;
+                    const fd = new FormData();
+                    fd.append("file", fileToUpload);
+                    const res = await fetch("/api/upload-image", { method: "POST", body: fd });
+                    const json = await res.json();
+                    if (json.url) setMainImageUrl(json.url);
+                    else setError("mainImage", "Image upload failed");
+                  } catch {
+                    setError("mainImage", "Image upload failed");
+                  } finally {
+                    setIsImageUploading(false);
+                  }
                 }}
               />
+              {isImageUploading && (
+                <p className="text-xs text-muted-foreground mt-1">Uploading image...</p>
+              )}
               {errors.mainImage && <span className="text-xs text-destructive">{errors.mainImage}</span>}
-              {mainImageUrl && (
+              {mainImageUrl && !isImageUploading && (
                 <img src={mainImageUrl} alt="preview" className="mt-2 w-32 h-32 object-cover rounded-md border border-border" />
               )}
             </div>
@@ -379,8 +419,8 @@ export default function CustomerPage() {
               By submitting, you agree that non-authentic items incur a mandatory $450.00 CAD fee per item to cover shipping and authentication costs.
             </p>
 
-            <Button type="submit" className="w-full bg-orange-700 hover:bg-orange-800 text-white" disabled={isSubmitting || isUploadingPreset}>
-              {isSubmitting ? "Submitting..." : "Submit"}
+            <Button type="submit" className="w-full bg-orange-700 hover:bg-orange-800 text-white" disabled={isSubmitting || isUploadingPreset || isImageUploading}>
+              {isImageUploading ? "Uploading image..." : isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </form>
         </div>
