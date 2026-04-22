@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 gap-10 bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex justify-end px-4 py-3">
+        <ThemeToggle />
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12 gap-10">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight mb-1">Quotly</h1>
         <p className="text-sm text-muted-foreground">Select your view to continue</p>
@@ -30,6 +35,7 @@ export default function LandingPage() {
             <p className="text-sm text-muted-foreground mt-1">Review and generate quotes for submissions</p>
           </div>
         </Link>
+      </div>
       </div>
     </div>
   );

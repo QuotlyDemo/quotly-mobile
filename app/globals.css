@@ -54,6 +54,27 @@
   --ring: oklch(0.704 0.04 256.788);
 }
 
+.dark {
+  --background: #011744;
+  --foreground: #F4F8FC;
+  --card: #01265B;
+  --card-foreground: #F4F8FC;
+  --popover: #01265B;
+  --popover-foreground: #F4F8FC;
+  --primary: #2ED1E0;
+  --primary-foreground: #011744;
+  --secondary: #033A78;
+  --secondary-foreground: #F4F8FC;
+  --muted: #01265B;
+  --muted-foreground: #B5C5D9;
+  --accent: #033A78;
+  --accent-foreground: #F4F8FC;
+  --destructive: #E07575;
+  --border: #033A78;
+  --input: #033A78;
+  --ring: #2ED1E0;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, X, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { saveSubmission } from "@/lib/session";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const PRESETS = [
   {
@@ -35,7 +37,6 @@ const PRESETS = [
   },
 ];
 
-// Compress image to under 1MB before upload
 function compressImage(file: File): Promise<File> {
   return new Promise((resolve) => {
     const canvas = document.createElement("canvas");
@@ -151,11 +152,14 @@ export default function CustomerPage() {
       return;
     }
     setIsSubmitting(true);
+    const id = Date.now();
     fetch(`${API_BASE}/intake`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${API_KEY}` },
-      body: JSON.stringify({ id: Date.now(), location, brand, style, year, placeOfPurchase, retailPrice, size, condition, colours, materials, hardware, inclusions, lendQuote, mainImageUrl }),
+      body: JSON.stringify({ id, location, brand, style, year, placeOfPurchase, retailPrice, size, condition, colours, materials, hardware, inclusions, lendQuote, mainImageUrl }),
     }).finally(() => setIsSubmitting(false));
+
+    saveSubmission({ id, brand, style, submittedAt: new Date().toISOString(), mainImageUrl: mainImageUrl! });
     toast.success("Form submitted correctly");
     setLocation("canada");
     setBrand("");
@@ -182,6 +186,7 @@ export default function CustomerPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-lg font-bold tracking-tight">Consign / Sell</h1>
+        <div className="ml-auto"><ThemeToggle /></div>
       </div>
 
       <div className="max-w-md mx-auto w-full px-4 py-5 flex flex-col gap-5">

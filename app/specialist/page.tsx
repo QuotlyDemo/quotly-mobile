@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getMySubmissions } from "@/lib/session";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const BRAND_LABELS: Record<string, string> = {
   "bottega-veneta": "Bottega Veneta",
@@ -90,6 +92,7 @@ export default function SpecialistPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [quoteResults, setQuoteResults] = useState<Record<number, QuoteResult | null>>({});
   const [loadingQuoteId, setLoadingQuoteId] = useState<number | null>(null);
+  const [myIds, setMyIds] = useState<Set<number>>(new Set());
 
   function fetchSubmissions(key: string) {
     if (!key) return;
@@ -107,13 +110,16 @@ export default function SpecialistPage() {
           materials: item.materials ?? [],
           hardware: item.hardware ?? [],
         }));
-        setSubmissions(mapped);
+        setSubmissions(mapped.sort((a: { id: number }, b: { id: number }) => b.id - a.id));
       })
       .catch(() => setSubmissions([]))
       .finally(() => setIsFetching(false));
   }
 
-  useEffect(() => { fetchSubmissions(API_KEY); }, []);
+  useEffect(() => {
+    fetchSubmissions(API_KEY);
+    setMyIds(new Set(getMySubmissions().map((s) => s.id)));
+  }, []);
 
   function fetchQuote(id: number) {
     setLoadingQuoteId(id);
@@ -142,6 +148,7 @@ export default function SpecialistPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-lg font-bold tracking-tight">Pending Quotes</h1>
+        <div className="ml-auto"><ThemeToggle /></div>
       </div>
 
       <div className="max-w-md mx-auto w-full px-4 py-5 flex flex-col gap-4">
@@ -159,20 +166,24 @@ export default function SpecialistPage() {
             {submissions.map((s, index) => {
               const isExpanded = expandedId === s.id;
               const quote = quoteResults[s.id];
+              const isMine = myIds.has(s.id);
               return (
-                <div key={s.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                <div key={s.id} className={`rounded-xl border bg-card overflow-hidden ${isMine ? "border-orange-600" : "border-border"}`}>
                   {/* Row */}
                   <button
                     type="button"
                     className="w-full flex items-center gap-3 p-4 text-left"
                     onClick={() => setExpandedId(isExpanded ? null : s.id)}
                   >
-                    <span className="text-xs text-muted-foreground font-mono w-5 shrink-0">{submissions.length - index}</span>
+                    <span className="text-xs text-muted-foreground font-mono w-5 shrink-0">{index + 1}</span>
                     {s.mainImageUrl
                       ? <img src={s.mainImageUrl} alt="item" className="w-10 h-10 object-cover rounded-md shrink-0" />
                       : <div className="w-10 h-10 rounded-md bg-muted shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{BRAND_LABELS[s.brand] ?? (s.brand || "—")}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{BRAND_LABELS[s.brand] ?? (s.brand || "—")}</p>
+                        {isMine && <span className="shrink-0 text-xs font-medium text-orange-700 dark:text-orange-600 bg-orange-50 dark:bg-orange-950 px-1.5 py-0.5 rounded-full">Yours</span>}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">{s.style || "—"} · {s.year || "—"}</p>
                     </div>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
