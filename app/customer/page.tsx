@@ -15,25 +15,26 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const PRESETS = [
   {
-    location: "canada", brand: "celine", style: "Classic Box", year: "2020",
-    placeOfPurchase: "Celine Boutique", retailPrice: "3200", size: "Medium",
-    colours: ["Black"], materials: ["Smooth Leather"], hardware: ["Gold"],
+    location: "canada", brand: "louis-vuitton", style: "Capucines BB", year: "2020",
+    placeOfPurchase: "Louis Vuitton Boutique", retailPrice: "9200", size: "BB",
+    dimensions: "10.6 x 6.8 x 3.5 in",
+    colours: ["Black"], materials: ["Taurillon Leather", "Cowhide Leather Lining"], hardware: ["Gold", "Mother-of-Pearl Effect"],
     condition: "9.5/10 (some minor flaws)", inclusions: "Dustbag, box", lendQuote: false,
-    mainImageUrl: "/preset-1.jpg",
+    mainImageUrl: "",
   },
   {
-    location: "us", brand: "chanel", style: "Classic Flap Medium", year: "2021",
-    placeOfPurchase: "Chanel Boutique", retailPrice: "8800", size: "Medium",
-    colours: ["Beige"], materials: ["Lambskin"], hardware: ["Gold"],
-    condition: "9.5/10 (some minor flaws)", inclusions: "Dustbag, box, authenticity card", lendQuote: true,
-    mainImageUrl: "/preset-2.jpg",
+    location: "us", brand: "christian-dior", style: "Book Tote Medium", year: "2021",
+    placeOfPurchase: "Dior Boutique", retailPrice: "4400", size: "Medium",
+    colours: ["Ecru", "Blue"], materials: ["Cotton", "Embroidered Canvas"], hardware: [],
+    condition: "9.5/10 (some minor flaws)", inclusions: "Dustbag", lendQuote: true,
+    mainImageUrl: "",
   },
   {
-    location: "us", brand: "saint-laurent", style: "Le 5 à 7", year: "2021",
-    placeOfPurchase: "Saint Laurent Boutique", retailPrice: "1990", size: "Large",
-    colours: ["Black"], materials: ["Smooth Leather"], hardware: ["Silver"],
-    condition: "9.7/10 (like new)", inclusions: "Dustbag, box", lendQuote: false,
-    mainImageUrl: "/preset-3.jpg",
+    location: "canada", brand: "gucci", style: "GG Multicolor Flap Mini Bag", year: "2020",
+    placeOfPurchase: "Gucci Boutique", retailPrice: "2250", size: "Mini",
+    colours: ["Ivory", "Multicolor"], materials: ["GG Supreme Canvas", "Leather Trim"], hardware: ["Gold"],
+    condition: "9.5/10 (some minor flaws)", inclusions: "Box", lendQuote: false,
+    mainImageUrl: "",
   },
 ];
 
@@ -93,6 +94,7 @@ export default function CustomerPage() {
     setMainImageUrl(null); setErrors({});
     if (fileInputRef.current) fileInputRef.current.value = "";
 
+    if (!p.mainImageUrl) return;
     setIsUploadingPreset(true);
     try {
       const res = await fetch(p.mainImageUrl);
@@ -195,9 +197,9 @@ export default function CustomerPage() {
         </p>
 
         <div className="flex gap-2">
-          {PRESETS.map((_, i) => (
+          {PRESETS.map((p, i) => (
             <Button key={i} type="button" variant="outline" size="sm" className="flex-1" disabled={isUploadingPreset} onClick={() => applyPreset(i)}>
-              {isUploadingPreset ? "Loading..." : `Preset ${i + 1}`}
+              {isUploadingPreset ? "Loading..." : p.brand.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
             </Button>
           ))}
         </div>
